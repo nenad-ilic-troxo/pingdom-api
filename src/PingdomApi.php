@@ -125,8 +125,7 @@ class PingdomApi {
         $parameters['offset'] = $offset;
       }
     }
-    $parameters['tags'] = 'pfizer';
-    $parameters['include_tags'] = true;
+
     $data = $this->request('GET', 'checks', $parameters);
     return $data->checks;
   }
@@ -145,7 +144,75 @@ class PingdomApi {
     $data = $this->request('GET', "checks/${check_id}");
     return $data->check;
   }
+  
+  public function summaryOutage($check_id) {
+    $this->ensureParameters(array('check_id' => $check_id), __METHOD__);
+	
+    $data = $this->request('GET', "summary.outage/${check_id}");
+    return $data;
+  }
 
+  
+    public function summaryAverage($check_id) {
+    $this->ensureParameters(array('check_id' => $check_id), __METHOD__);
+	
+    $parameters = array(
+      'includeuptime' => TRUE,
+    );
+	
+    $data = $this->request('GET', "summary.average/${check_id}", $parameters);
+    return $data->summary;
+  }
+  
+  
+  //Only name parameter is required
+    public function addContact($contact, $defaults = array()) {
+	
+    $this->ensureParameters(array(
+      'name' => $contact['name'],
+      'email' => $contact['email'],
+    ), __METHOD__);
+    $contact += $defaults;
+	
+    $data = $this->request('POST', "notification_contacts", $contact);
+    return $data;
+  }
+  
+  
+  
+  
+  
+   public function summaryAverageUptimeInfo($check_id) {
+	
+	return $this->summaryAverage($check_id)->status;
+
+	}
+	
+	public function checkTotalUptime($check_id) {
+	
+	$data = $this->summaryAverageUptimeInfo($check_id);
+        
+        //if check is created moments ago, it needs at least two interval checks to gather data
+        if ($data->totalup == 0 && $data->totaldown == 0){
+		
+		return 'N/A';
+		
+	}
+        
+        $percentage = ($data->totalup / (float)($data->totalup + $data->totaldown))*100;
+        
+        if ($percentage == 0) {
+            
+            return $percentage . '%';
+        
+        }
+        else {
+            
+	    return number_format((float)$percentage, 2, '.', '').'%';
+	
+        }
+    }
+  
   /**
    * Adds a new check.
    *
@@ -157,17 +224,20 @@ class PingdomApi {
    *   An array of default settings for the check.
    *
    * @return string
-   *   A success message.
+   *   Returns check data.
    */
   public function addCheck($check, $defaults = array()) {
     $this->ensureParameters(array(
       'name' => $check['name'],
       'host' => $check['host'],
       'type' => $check['type'],
+      'resolution' => $check['resolution'],
+      'tags' => $check['tags']
     ), __METHOD__);
+    
     $check += $defaults;
-    $data = $this->request('POST', 'checks', $check);
-    return sprintf('Created check %s for %s at http://%s%s', $data->check->id, $check['name'], $check['host'], $check['type']);
+    
+    return $this->request('POST', 'checks', $check);
   }
 
   /**
