@@ -146,14 +146,13 @@ class PingdomApi {
   }
   
   public function summaryOutage($check_id) {
-    $this->ensureParameters(array('check_id' => $check_id), __METHOD__);
+	$this->ensureParameters(array('check_id' => $check_id), __METHOD__);
 	
-    $data = $this->request('GET', "summary.outage/${check_id}");
-    return $data;
+	$data = $this->request('GET', "summary.outage/${check_id}");
+	return $data;
   }
 
-  
-    public function summaryAverage($check_id) {
+  public function summaryAverage($check_id) {
     $this->ensureParameters(array('check_id' => $check_id), __METHOD__);
 	
     $parameters = array(
@@ -164,54 +163,37 @@ class PingdomApi {
     return $data->summary;
   }
   
-  
-  //Only name parameter is required
-    public function addContact($contact, $defaults = array()) {
-	
-    $this->ensureParameters(array(
-      'name' => $contact['name'],
-      'email' => $contact['email'],
-    ), __METHOD__);
-    $contact += $defaults;
-	
-    $data = $this->request('POST', "notification_contacts", $contact);
-    return $data;
+   //Only name parameter is required
+  public function addContact($contact, $defaults = array()) {
+	$this->ensureParameters(array(
+	  'name' => $contact['name'],
+	  'email' => $contact['email'],
+	), __METHOD__);
+	$contact += $defaults;
+
+	$data = $this->request('POST', "notification_contacts", $contact);
+	return $data;
   }
   
-  
-  
-  
-  
-   public function summaryAverageUptimeInfo($check_id) {
-	
+  public function summaryAverageUptimeInfo($check_id) {
 	return $this->summaryAverage($check_id)->status;
-
-	}
+  }
 	
-	public function checkTotalUptime($check_id) {
-	
-	$data = $this->summaryAverageUptimeInfo($check_id);
-        
-        //if check is created moments ago, it needs at least two interval checks to gather data
-        if ($data->totalup == 0 && $data->totaldown == 0){
-		
-		return 'N/A';
-		
+  public function checkTotalUptime($check_id) {
+    $data = $this->summaryAverageUptimeInfo($check_id);
+	//if check is created moments ago, it needs at least two interval checks to gather data
+	if ($data->totalup == 0 && $data->totaldown == 0) {
+	return 'N/A';
 	}
         
-        $percentage = ($data->totalup / (float)($data->totalup + $data->totaldown))*100;
-        
-        if ($percentage == 0) {
-            
-            return $percentage . '%';
-        
-        }
-        else {
-            
-	    return number_format((float)$percentage, 2, '.', '').'%';
+	$percentage = ($data->totalup / (float)($data->totalup + $data->totaldown))*100;
 	
-        }
-    }
+	if ($percentage == 0) {
+		return $percentage . '%';
+	} else {
+	return number_format((float)$percentage, 2, '.', '').'%';
+	}
+  }
   
   /**
    * Adds a new check.
